@@ -2,6 +2,7 @@ package structmarshaller
 
 import (
 	"reflect"
+	"strings"
 )
 
 type StructMarshaller struct {
@@ -23,8 +24,22 @@ func (st *StructMarshaller) Encode() (result map[string]interface{}) {
 
 	for i := 0; i < numFields; i++ {
 		field := objReflect.Field(i)
-		key := field.Tag.Get("stmarsh")
-		result[key] = objValReflect.Field(i).Interface()
+
+		tag := field.Tag.Get("stmarsh")
+		properties := strings.Split(tag, ",")
+
+		key := properties[0]
+
+		value := objValReflect.Field(i).Interface()
+		zeroValue := reflect.Zero(reflect.TypeOf(value)).Interface()
+
+		if len(properties) > 1 {
+			if properties[1] == "omitempty" && value == zeroValue {
+				continue
+			}
+		}
+
+		result[key] = value
 	}
 
 	return
